@@ -139,12 +139,13 @@ sns.ecdfplot(scores, ax=ax)
 ax.set_xlabel("aggregated score")
 ax.set_ylabel("proportion")
 
+st.markdown("### Cumulative distribution of scores")
 col, _ = st.columns([4, 4])
-col.markdown("### Cumulative distribution of scores")
 col.pyplot(fig)
 st.markdown("---")
 
 st.markdown("### Ranked samples")
+st.markdown("- the translations sorted in decreasing of the weighted sum of the three features")
 for rank, datum in enumerate(data, 1):
     score = agg_scores(datum["scores"])
     str_scores = " · ".join("{}: {:.1f}".format(k, v) for k, v in datum["scores"].items())
