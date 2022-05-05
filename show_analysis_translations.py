@@ -12,11 +12,22 @@ from matplotlib import pyplot as plt
 random.seed(1337)
 st.set_page_config(layout="wide")
 
+
+def agg_scores(scores, weights):
+    return sum(weights[k] * scores[k] for k in scores.keys())
+
+
 langs = "id sw ta tr zh".split()  # MaRVL languages
 weights = {
     "len-ratio": 1.0,
     "sim-tgt-src": 1.0,
     "uniformity": 1.0,
+}
+sort_funcs = {
+    "aggregated-score": agg_scores,
+    "len-ratio": lambda s, *_: s["len-ratio"],
+    "sim-tgt-src": lambda s, *_: s["sim-tgt-src"],
+    "uniformity": lambda s, *_: s["uniformity"],
 }
 
 with st.sidebar:
@@ -35,6 +46,9 @@ with st.sidebar:
     """)
     for feature in weights.keys():
         weights[feature] = st.number_input(feature, value=1.0, help=help_text[feature])
+    st.markdown("---")
+
+    sort_by = st.selectbox("sort by", sort_funcs.keys(), index=0)
 
 
 def load_scored_data(lang):
@@ -126,14 +140,10 @@ def load_scored_data(lang):
     return scored_keys
 
 
-def agg_scores(scores):
-    return sum(weights[k] * scores[k] for k in scores.keys())
-
-
 data = load_scored_data(lang)
-data = sorted(data, reverse=True, key=lambda d: agg_scores(d["scores"]))
+data = sorted(data, reverse=True, key=lambda d: sort_funcs[sort_by](d["scores"], weights))
 
-scores = [agg_scores(d["scores"]) for d in data]
+scores = [agg_scores(d["scores"], weights) for d in data]
 fig, ax = plt.subplots()
 sns.ecdfplot(scores, ax=ax)
 ax.set_xlabel("aggregated score")
@@ -147,7 +157,7 @@ st.markdown("---")
 st.markdown("### Ranked samples")
 st.markdown("- the translations sorted in decreasing of the weighted sum of the three features")
 for rank, datum in enumerate(data, 1):
-    score = agg_scores(datum["scores"])
+    score = agg_scores(datum["scores"], weights)
     str_scores = " · ".join("{}: {:.1f}".format(k, v) for k, v in datum["scores"].items())
     st.markdown("{} ◇ `{}` ◇ score: {:.3f} ← ".format(rank, datum["key"], score) + str_scores)
     st.code("en: {}\n{}: {}".format(datum["text-src"], lang, datum["text-tgt"]))
