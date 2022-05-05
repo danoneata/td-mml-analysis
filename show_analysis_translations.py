@@ -139,7 +139,7 @@ sns.ecdfplot(scores, ax=ax)
 ax.set_xlabel("aggregated score")
 ax.set_ylabel("proportion")
 
-col, _ = st.columns([4, 8])
+col, _ = st.columns([4, 4])
 col.markdown("### Cumulative distribution of scores")
 col.pyplot(fig)
 st.markdown("---")
