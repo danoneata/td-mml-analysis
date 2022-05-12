@@ -13,7 +13,8 @@ random.seed(1337)
 st.set_page_config(layout="wide")
 
 
-def agg_scores(scores, weights):
+def agg_scores(datum, weights):
+    scores = datum["scores"]
     return sum(weights[k] * scores[k] for k in scores.keys())
 
 
@@ -25,9 +26,10 @@ weights = {
 }
 sort_funcs = {
     "aggregated-score": agg_scores,
-    "len-ratio": lambda s, *_: s["len-ratio"],
-    "sim-tgt-src": lambda s, *_: s["sim-tgt-src"],
-    "uniformity": lambda s, *_: s["uniformity"],
+    "len-ratio": lambda d, *_: d["scores"]["len-ratio"],
+    "sim-tgt-src": lambda d, *_: d["scores"]["sim-tgt-src"],
+    "uniformity": lambda d, *_: d["scores"]["uniformity"],
+    "loss": lambda d, *_: d["loss-m2m-100-lg"],
 }
 
 with st.sidebar:
@@ -141,12 +143,12 @@ def load_scored_data(lang):
 
 
 data = load_scored_data(lang)
-data = sorted(data, reverse=True, key=lambda d: sort_funcs[sort_by](d["scores"], weights))
+data = sorted(data, reverse=True, key=lambda d: sort_funcs[sort_by](d, weights))
 
-scores = [agg_scores(d["scores"], weights) for d in data]
+scores = [agg_scores(d, weights) for d in data]
 fig, ax = plt.subplots()
 sns.ecdfplot(scores, ax=ax)
-ax.set_xlabel("aggregated score")
+ax.set_xlabel("score")
 ax.set_ylabel("proportion")
 
 st.markdown("### Cumulative distribution of scores")
@@ -154,11 +156,22 @@ col, _ = st.columns([4, 4])
 col.pyplot(fig)
 st.markdown("---")
 
+losses = [d["loss-m2m-100-lg"] for d in data]
+fig, ax = plt.subplots()
+ax.scatter(scores, losses)
+ax.set_xlabel("score")
+ax.set_ylabel("loss")
+
+st.markdown("### Correlation between score and loss")
+col, _ = st.columns([4, 4])
+col.pyplot(fig)
+st.markdown("---")
+
 st.markdown("### Ranked samples")
 st.markdown("- the translations sorted in decreasing of the weighted sum of the three features")
 for rank, datum in enumerate(data, 1):
-    score = agg_scores(datum["scores"], weights)
+    score = agg_scores(datum, weights)
     str_scores = " · ".join("{}: {:.1f}".format(k, v) for k, v in datum["scores"].items())
-    st.markdown("{} ◇ `{}` ◇ score: {:.3f} ← ".format(rank, datum["key"], score) + str_scores)
+    st.markdown("{} ◇ `{}` ◇ loss: {:.3f} ◇ score: {:.3f} ← ".format(rank, datum["key"], datum["loss-m2m-100-lg"], score) + str_scores)
     st.code("en: {}\n{}: {}".format(datum["text-src"], lang, datum["text-tgt"]))
     st.markdown("---")
