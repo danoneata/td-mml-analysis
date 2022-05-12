@@ -3,6 +3,7 @@ import os
 import pdb
 import random
 
+import pandas as pd
 import streamlit as st
 import seaborn as sns
 
@@ -25,11 +26,12 @@ weights = {
     "uniformity": 1.0,
 }
 sort_funcs = {
-    "aggregated-score": agg_scores,
+    "aggregated-badness-score": agg_scores,
     "len-ratio": lambda d, *_: d["scores"]["len-ratio"],
     "sim-tgt-src": lambda d, *_: d["scores"]["sim-tgt-src"],
     "uniformity": lambda d, *_: d["scores"]["uniformity"],
     "loss": lambda d, *_: d["m2m-100-lg"]["loss"],
+    "neg-bleu": lambda d, *_: - d["backtranslation"]["bleu-score"]
 }
 
 with st.sidebar:
@@ -149,7 +151,7 @@ data = sorted(data, reverse=True, key=lambda d: sort_funcs[sort_by](d, weights))
 scores = [agg_scores(d, weights) for d in data]
 fig, ax = plt.subplots()
 sns.ecdfplot(scores, ax=ax)
-ax.set_xlabel("score")
+ax.set_xlabel("badness score")
 ax.set_ylabel("proportion")
 
 st.markdown("### Cumulative distribution of scores")
@@ -160,26 +162,35 @@ st.markdown("---")
 
 losses = [d["m2m-100-lg"]["loss"] for d in data]
 num_tokens = [d["m2m-100-lg"]["num-tokens-tgt"] for d in data]
+bleu_scores = [d["backtranslation"]["bleu-score"] for d in data]
 
-fig, axs = plt.subplots(nrows=2, figsize=[6.4, 4.8 * 2.1])
-axs[0].scatter(scores, losses)
-axs[0].set_xlabel("score")
-axs[0].set_ylabel("loss")
+df = pd.DataFrame({
+    "badness-scores": scores,
+    "losses": losses,
+    "bleu-scores": bleu_scores,
+    "num-tokens": num_tokens,
+})
+pp = sns.pairplot(df, corner=True, plot_kws=dict(marker="."))
 
-axs[1].scatter(num_tokens, losses)
-axs[1].set_xlabel("num. tokens")
-axs[1].set_ylabel("loss")
+st.markdown("### Correlations")
+st.markdown("""
+... between:
 
-st.markdown("### Correlation between score and loss")
-col, _ = st.columns([4, 4])
-col.pyplot(fig)
+- `badness-scores`: estimated badness scores
+- `losses`: cross-entropy losses from the `m2m-100-lg` model
+- `bleu-scores`: BLEU scores computed on backtranslations produced with the `m2m-100-lg` model
+- `num-tokens`: number of tokens produced by the `m2m-100-lg` in the target language
+""")
+st.pyplot(pp.fig)
 st.markdown("---")
 
 st.markdown("### Ranked samples")
 st.markdown("- the translations sorted in decreasing of the weighted sum of the three features")
 for rank, datum in enumerate(data, 1):
     score = agg_scores(datum, weights)
+    loss = datum["m2m-100-lg"]["loss"]
+    bleu_score = datum["backtranslation"]["bleu-score"]
     str_scores = " · ".join("{}: {:.1f}".format(k, v) for k, v in datum["scores"].items())
-    st.markdown("{} ◇ `{}` ◇ loss: {:.3f} ◇ score: {:.3f} ← ".format(rank, datum["key"], datum["m2m-100-lg"]["loss"], score) + str_scores)
-    st.code("en: {}\n{}: {}".format(datum["text-src"], lang, datum["text-tgt"]))
+    st.markdown("{} ◇ `{}` ◇ loss: {:.3f} ◇ bleu: {:.3f} ◇ badness: {:.3f} ← ".format(rank, datum["key"], loss, bleu_score, score) + str_scores)
+    st.code("en : {}\nen': {}\n{} : {}".format(datum["text-src"], datum["backtranslation"]["text"], lang, datum["text-tgt"]))
     st.markdown("---")
