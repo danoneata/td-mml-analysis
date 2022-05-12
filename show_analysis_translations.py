@@ -29,7 +29,7 @@ sort_funcs = {
     "len-ratio": lambda d, *_: d["scores"]["len-ratio"],
     "sim-tgt-src": lambda d, *_: d["scores"]["sim-tgt-src"],
     "uniformity": lambda d, *_: d["scores"]["uniformity"],
-    "loss": lambda d, *_: d["loss-m2m-100-lg"],
+    "loss": lambda d, *_: d["m2m-100-lg"]["loss"],
 }
 
 with st.sidebar:
@@ -43,8 +43,10 @@ with st.sidebar:
     }
 
     st.markdown("""
-    - score each translation based on three features (see help)
-    - adjust their weights using the sliders below
+    - we estimate a _badness_ score for each translation:
+    the larger the score, the more we expect the translation to be poor 
+    - the score is computed based on three features (see help)
+    - you can adjust the weights of the features using the sliders below
     """)
     for feature in weights.keys():
         weights[feature] = st.number_input(feature, value=1.0, help=help_text[feature])
@@ -154,13 +156,20 @@ ax.set_ylabel("proportion")
 st.markdown("### Cumulative distribution of scores")
 col, _ = st.columns([4, 4])
 col.pyplot(fig)
+st.markdown("- if we were to threshold using a badness score of σ, then we would keep a proportion of data as indicated by the graph")
 st.markdown("---")
 
-losses = [d["loss-m2m-100-lg"] for d in data]
-fig, ax = plt.subplots()
-ax.scatter(scores, losses)
-ax.set_xlabel("score")
-ax.set_ylabel("loss")
+losses = [d["m2m-100-lg"]["loss"] for d in data]
+num_tokens = [d["m2m-100-lg"]["num-tokens-tgt"] for d in data]
+
+fig, axs = plt.subplots(nrows=2, figsize=[6.4, 4.8 * 2.1])
+axs[0].scatter(scores, losses)
+axs[0].set_xlabel("score")
+axs[0].set_ylabel("loss")
+
+axs[1].scatter(num_tokens, losses)
+axs[1].set_xlabel("num. tokens")
+axs[1].set_ylabel("loss")
 
 st.markdown("### Correlation between score and loss")
 col, _ = st.columns([4, 4])
@@ -172,6 +181,6 @@ st.markdown("- the translations sorted in decreasing of the weighted sum of the 
 for rank, datum in enumerate(data, 1):
     score = agg_scores(datum, weights)
     str_scores = " · ".join("{}: {:.1f}".format(k, v) for k, v in datum["scores"].items())
-    st.markdown("{} ◇ `{}` ◇ loss: {:.3f} ◇ score: {:.3f} ← ".format(rank, datum["key"], datum["loss-m2m-100-lg"], score) + str_scores)
+    st.markdown("{} ◇ `{}` ◇ loss: {:.3f} ◇ score: {:.3f} ← ".format(rank, datum["key"], datum["m2m-100-lg"]["loss"], score) + str_scores)
     st.code("en: {}\n{}: {}".format(datum["text-src"], lang, datum["text-tgt"]))
     st.markdown("---")
