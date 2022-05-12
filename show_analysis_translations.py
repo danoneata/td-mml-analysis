@@ -43,8 +43,7 @@ with st.sidebar:
     }
 
     st.markdown("""
-    - we estimate a _badness_ score for each translation:
-    the larger the score, the more we expect the translation to be poor 
+    - we estimate a _badness_ score for each translation: the larger the score, the more we expect the translation to be poor
     - the score is computed based on three features (see help)
     - you can adjust the weights of the features using the sliders below
     """)
