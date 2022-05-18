@@ -31,15 +31,15 @@ sort_funcs = {
 
 threshs = {
     "ar": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "bg": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "bn": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.5,
     },
     "da": {
@@ -51,7 +51,7 @@ threshs = {
         "uniformity": 0.6,
     },
     "el": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "fr": {
@@ -63,11 +63,11 @@ threshs = {
         "uniformity": 0.6,
     },
     "ja": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "ko": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "pt": {
@@ -75,7 +75,7 @@ threshs = {
         "uniformity": 0.6,
     },
     "ru": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "sw": {
@@ -83,19 +83,19 @@ threshs = {
         "uniformity": 0.6,
     },
     "ta": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
     "tr": {
-        "sim-tgt-src-bleu": 0.5,
+        "sim-tgt-src-bleu": 0.4,
         "uniformity": 0.6,
     },
     "vi": {
-        "sim-tgt-src-bleu": 0.5,
+        "sim-tgt-src-bleu": 0.4,
         "uniformity": 0.6,
     },
     "zh": {
-        "sim-tgt-src-bleu": 0.2,
+        "sim-tgt-src-bleu": 0.1,
         "uniformity": 0.6,
     },
 }
