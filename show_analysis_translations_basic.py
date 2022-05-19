@@ -93,7 +93,7 @@ threshs = {
         "uniformity": u,
     },
     "ru": {
-        "sim-tgt-src-bleu": s_indo,
+        "sim-tgt-src-bleu": s_script,
         "uniformity": u,
     },
     "sw": {
