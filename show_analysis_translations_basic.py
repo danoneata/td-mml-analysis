@@ -19,7 +19,7 @@ def agg_scores(datum, weights):
     return sum(weights[k] * scores[k] for k in scores.keys())
 
 
-langs = "ar bg bn da de el fr id ja ko pt ru sw ta tr vi zh".split()  # IGLUE languages
+langs = "ar bg bn da de el es et fr id ja ko pt ru sw ta tr vi zh".split()  # IGLUE languages
 weights_default = {
     "sim-tgt-src-bleu": 1.0,
     "uniformity": 1.0,
@@ -52,6 +52,14 @@ threshs = {
     },
     "el": {
         "sim-tgt-src-bleu": 0.1,
+        "uniformity": 0.6,
+    },
+    "es": {
+        "sim-tgt-src-bleu": 0.7,
+        "uniformity": 0.6,
+    },
+    "et": {
+        "sim-tgt-src-bleu": 0.5,
         "uniformity": 0.6,
     },
     "fr": {
