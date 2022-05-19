@@ -19,6 +19,11 @@ def agg_scores(datum, weights):
     return sum(weights[k] * scores[k] for k in scores.keys())
 
 
+def load_scored_data(lang):
+    with open(f"data/cc/analysis-{lang}-cache.json") as f:
+        return json.load(f)
+
+
 langs = "ar bg bn da de el es et fr id ja ko pt ru sw ta tr vi zh".split()  # IGLUE languages
 weights_default = {
     "sim-tgt-src-bleu": 1.0,
@@ -29,84 +34,90 @@ sort_funcs = {
     "uniformity": lambda d, *_: d["scores"]["uniformity"],
 }
 
+u = 0.5
+s_script = 0.1
+s_non_indo = 0.5
+s_indo = 0.7
+
 threshs = {
     "ar": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "bg": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "bn": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.5,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "da": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "de": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "el": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "es": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "et": {
-        "sim-tgt-src-bleu": 0.5,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "fr": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "id": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_non_indo,
+        "uniformity": u,
     },
     "ja": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "ko": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "pt": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "ru": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_indo,
+        "uniformity": u,
     },
     "sw": {
-        "sim-tgt-src-bleu": 0.7,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_non_indo,
+        "uniformity": u,
     },
     "ta": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
     "tr": {
-        "sim-tgt-src-bleu": 0.4,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_non_indo,
+        "uniformity": u,
     },
     "vi": {
-        "sim-tgt-src-bleu": 0.4,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_non_indo,
+        "uniformity": u,
     },
     "zh": {
-        "sim-tgt-src-bleu": 0.1,
-        "uniformity": 0.6,
+        "sim-tgt-src-bleu": s_script,
+        "uniformity": u,
     },
 }
+
 
 with st.sidebar:
     lang = st.selectbox("language", langs, index=0)
@@ -123,11 +134,32 @@ with st.sidebar:
         τ[f] = st.number_input(f, value=threshs[lang][f])
 
 
-def load_scored_data(lang):
-    with open(f"data/cc/analysis-{lang}-cache.json") as f:
-        return json.load(f)
+def proportion_lost(lang):
+    data = load_scored_data(lang)
+    df = pd.DataFrame([datum["scores"] for datum in data])
+    idxs1 = df["uniformity"] > threshs[lang]["uniformity"]
+    idxs2 = df["sim-tgt-src-bleu"] > threshs[lang]["sim-tgt-src-bleu"]
+    return len(df[idxs1 | idxs2]) / len(df)
 
 
+ps = [{"lang": lang, "prop": 100 * proportion_lost(lang)} for lang in langs]
+fig, ax = plt.subplots()
+sns.barplot(data=pd.DataFrame(ps), x="lang", y="prop", ax=ax)
+ax.bar_label(ax.containers[0], fmt="%.1f")
+st.markdown("### Lost data")
+st.markdown("""
+Below we show the fraction of data that is lost by fitlering based on the default thresholds;
+these were set as follows
+
+- thresholds on uniformity to 0.5 set to all languages.
+- for similarity source target on the bleu score:
+    - 0.1 for languages with different script
+    - 0.5 for non Indo European languages with Latin script
+    - 0.9 for Indo Europen languages with Latin script
+""")
+
+col, _ = st.columns([1, 1])
+col.pyplot(fig)
 data = load_scored_data(lang)
 df = pd.DataFrame([datum["scores"] for datum in data])
 
@@ -141,7 +173,7 @@ axs[1].vlines(τ["uniformity"], 0, 1, color="gray")
 axs[2].hlines(τ["sim-tgt-src-bleu"], 0, 1, color="gray")
 axs[2].vlines(τ["uniformity"], 0, 1, color="gray")
 
-st.markdown("### Distribution of scores")
+st.markdown(f"### Distribution of scores for `{lang}`")
 st.pyplot(fig)
 
 idxs1 = df["uniformity"] > τ["uniformity"]
@@ -160,7 +192,7 @@ def get_colored_score(datum, f):
     return f"{f} · <span style='color: {c}'>{s:.3f}</span>"
 
 
-st.markdown("### Ranked samples")
+st.markdown(f"### Ranked samples for `{lang}`")
 col1, col2 = st.columns(2)
 col1.markdown("- sort the translations in decreasing order of one of the features")
 sort_by = col2.selectbox("sort by", sort_funcs.keys(), index=0)
