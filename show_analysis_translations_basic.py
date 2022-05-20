@@ -69,7 +69,7 @@ threshs = {
         "uniformity": u,
     },
     "et": {
-        "sim-tgt-src-bleu": s_indo,
+        "sim-tgt-src-bleu": s_non_indo,
         "uniformity": u,
     },
     "fr": {
@@ -151,8 +151,8 @@ st.markdown("""
 Below we show the fraction of data that is lost by fitlering based on the default thresholds;
 these were set as follows
 
-- thresholds on uniformity to 0.5 set to all languages.
-- for similarity source target on the bleu score:
+- threshold on uniformity to 0.5 set to all languages.
+- threshold on source-target BLEU similarity:
     - 0.1 for languages with different script
     - 0.5 for non Indo European languages with Latin script
     - 0.9 for Indo Europen languages with Latin script
