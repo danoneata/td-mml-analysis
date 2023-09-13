@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 
 random.seed(1337)
 st.set_page_config(layout="wide")
+sns.set_theme("notebook")
 
 
 def agg_scores(datum, weights):
@@ -22,6 +23,29 @@ def agg_scores(datum, weights):
 def load_scored_data(lang):
     with open(f"data/cc/analysis-{lang}-cache.json") as f:
         return json.load(f)
+
+
+lang_to_iso3 = {
+    "ar": "ARB",
+    "bg": "BEG",
+    "bn": "BUL",
+    "da": "DAN",
+    "de": "DEU",
+    "el": "ELL",
+    "es": "EST",
+    "et": "EST",
+    "fr": "FRA",
+    "id": "IND",
+    "ja": "JPN",
+    "ko": "KOR",
+    "pt": "POR",
+    "ru": "RUS",
+    "sw": "SWA",
+    "ta": "TAM",
+    "tr": "TUR",
+    "vi": "VIE",
+    "zh": "CMN",
+}
 
 
 langs = "ar bg bn da de el es et fr id ja ko pt ru sw ta tr vi zh".split()  # IGLUE languages
@@ -142,11 +166,20 @@ def proportion_lost(lang):
     return len(df[idxs1 | idxs2]) / len(df)
 
 
-ps = [{"lang": lang, "prop": 100 * proportion_lost(lang)} for lang in langs]
-fig, ax = plt.subplots()
-sns.barplot(data=pd.DataFrame(ps), x="lang", y="prop", ax=ax)
-ax.bar_label(ax.containers[0], fmt="%.1f")
-st.markdown("### Lost data")
+ps = [{"lang": lang, "prop": 2.77 * (1 - proportion_lost(lang))} for lang in langs]
+fig, ax = plt.subplots(figsize=(6.4, 0.7 * 4.8))
+psdf = pd.DataFrame(ps)
+psdf = psdf.replace({"lang": lang_to_iso3})
+psdf = psdf.sort_values("lang")
+sns.barplot(data=psdf, x="lang", y="prop", ax=ax, color="b")
+ax.bar_label(ax.containers[0], fmt="%.1f", fontsize="small")
+ax.set_xlabel("language")
+ax.set_ylabel("num. sentences (× $10^6$)")
+ax.tick_params(axis="x", labelrotation=90)
+fig.savefig("num-sentences-after-filtering.pdf", bbox_inches="tight")
+st.code(sum(p["prop"] for p in ps) + 2.77)
+
+st.markdown("### Kept data")
 st.markdown("""
 Below we show the fraction of data that is lost by fitlering based on the default thresholds;
 these were set as follows
